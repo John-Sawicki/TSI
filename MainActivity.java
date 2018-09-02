@@ -25,6 +25,7 @@ public class MainActivity extends AppCompatActivity implements SystemAdapter.Sys
         mRecyclerView.setHasFixedSize(true);
         mSystemAdapter = new SystemAdapter(this);
         mRecyclerView.setAdapter(mSystemAdapter);
+
     }
 
     @Override
