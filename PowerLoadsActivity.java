@@ -1,13 +1,22 @@
 package com.example.android.tsi;
 
+import android.content.ContentValues;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.example.android.tsi.SqliteSum.SumDbHelper;
+import com.example.android.tsi.SqliteSum.SumTaskContract;
+
 import butterknife.BindView;
+import com.example.android.tsi.SqliteSum.SumTaskContract.SummaryEntry;
+import com.example.android.tsi.Widget.SummaryService;
 
 public class PowerLoadsActivity extends AppCompatActivity {
     //TODO add preference fragment for source voltage
@@ -16,6 +25,7 @@ public class PowerLoadsActivity extends AppCompatActivity {
     private EditText et_qty_1, et_watt_1, et_qty_2, et_watt_2;
     private Button btn_calculate;
     private int voltage = 120;
+    private SQLiteDatabase mDb;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -49,9 +59,29 @@ public class PowerLoadsActivity extends AppCompatActivity {
                 double pduSize = powerTotal/.8;
                 tv_total_pdu_result.setText(pduSize+"W");
                 double upsSize = powerTotal/0.9;
-                tv_total_ups_result.setText(upsSize+"VA");
+                if(upsSize>(int)upsSize){
+                    Log.d("Widget PwrLoads", upsSize+"");
+                    upsSize+=1;    //round up the the next int
+                    Log.d("Widget PwrLoads", upsSize+"");
+                }
+                tv_total_ups_result.setText((int)upsSize+"VA");
                 int breakerSize = breakerSize(powerTotal);
                 tv_breaker_result.setText(breakerSize+"A");
+
+                SumDbHelper dbHelper = new SumDbHelper(getApplicationContext());
+                mDb = dbHelper.getWritableDatabase();
+                ContentValues contentValues = new ContentValues();
+                contentValues.put(SumTaskContract.SummaryEntry.COLUMN_SYSTEM, "Power Loads");
+                contentValues.put(SumTaskContract.SummaryEntry.COLUMN_SUMMARY, "UPS Size "+(int)upsSize+"W");
+                Cursor cursor = mDb.query(SummaryEntry.TABLE_NAME, null, null,null,null,null,null);
+                if(cursor.moveToFirst()){
+                    mDb.update(SummaryEntry.TABLE_NAME, contentValues,null, null);
+                    Log.d("Widget PwrLoads", "update");
+                }else {
+                    long insert  =mDb.insert(SummaryEntry.TABLE_NAME, null, contentValues);
+                    Log.d("Widget PwrLoads", "insert");
+                }
+                SummaryService.startActionUpdateSum(getApplicationContext());
             }
         });
     }

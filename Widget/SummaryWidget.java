@@ -3,6 +3,7 @@ package com.example.android.tsi.Widget;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
 import android.content.Context;
+import android.util.Log;
 import android.widget.RemoteViews;
 
 import com.example.android.tsi.R;
@@ -18,7 +19,7 @@ public class SummaryWidget extends AppWidgetProvider {
         CharSequence widgetText = context.getString(R.string.appwidget_text);
         // Construct the RemoteViews object
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.summary_widget);
-        views.setTextViewText(R.id.appwidget_text, widgetText);
+        views.setTextViewText(R.id.appwidget_text, summary);
 
         // Instruct the widget manager to update the widget
         appWidgetManager.updateAppWidget(appWidgetId, views);
@@ -26,6 +27,7 @@ public class SummaryWidget extends AppWidgetProvider {
     static void updateAppWidgets(Context context, AppWidgetManager appWidgetManager,
                                  int[] appWidgetIds,String summary ){
         for(int appWidgetId:appWidgetIds ){
+            Log.d("widget", "updateAppWidgets widget # "+appWidgetId);
             updateAppWidget(context,appWidgetManager,appWidgetId, summary);
         }
     }
