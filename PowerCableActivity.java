@@ -1,15 +1,28 @@
 package com.example.android.tsi;
 
+import android.content.ContentValues;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
+
+import com.example.android.tsi.SqliteSum.SumDbHelper;
+import com.example.android.tsi.SqliteSum.SumTaskContract;
+import com.example.android.tsi.Widget.SummaryService;
 
 import butterknife.BindView;
 
 public class PowerCableActivity extends AppCompatActivity {
+    /*
     @BindView(R.id.sp_source_voltage) Spinner sp_source_voltage;
     @BindView(R.id.et_voltage) EditText et_voltage;
     @BindView(R.id.et_amperage) EditText et_amperage;
@@ -20,11 +33,82 @@ public class PowerCableActivity extends AppCompatActivity {
     @BindView(R.id.tv_large_distance)TextView tv_large_distance;
     @BindView(R.id.tv_wire_gauge_result)TextView tv_wire_gauge_result;
     @BindView(R.id.tv_wire_distance_result) TextView tv_wire_distance_result;
+    */
+    private Spinner sp_source_voltage;
+    private EditText et_voltage, et_amperage, et_wattage, et_distance, et_percent_drop;
+    private TextView tv_small_wire, tv_small_distance, tv_medium_wire, tv_medium_distance, tv_large_wire,tv_large_distance,
+    tv_wire_gauge_result, tv_wire_distance_result;
+    private ImageView iv_small_wire, iv_medium_wire, iv_large_wire;
+    private Button btn_calculate;
+    private SQLiteDatabase mDb;
+    private int voltage;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_power_cable);
         View viewReq = findViewById(R.id.lo_top_right);
         View viewResults = findViewById(R.id.lo_bottom_right);
+        et_voltage =viewReq.findViewById(R.id.et_voltage);
+        et_amperage = viewReq.findViewById(R.id.et_amperage);
+        et_wattage = viewReq.findViewById(R.id.et_wattage);
+        et_distance = viewReq.findViewById(R.id.et_distance);
+        et_percent_drop = viewReq.findViewById(R.id.et_percent_drop);
+        tv_small_wire = viewResults.findViewById(R.id.tv_small_wire);
+        tv_small_distance = viewResults.findViewById(R.id.tv_small_distance);
+        tv_medium_wire = viewResults.findViewById(R.id.tv_medium_wire);
+        tv_medium_distance = viewResults.findViewById(R.id.tv_medium_distance);
+        tv_large_wire = viewResults.findViewById(R.id.tv_large_wire);
+        tv_large_distance = viewResults.findViewById(R.id.tv_large_distance);
+        tv_wire_gauge_result = viewResults.findViewById(R.id.tv_wire_gauge_result);
+        tv_wire_distance_result = viewResults.findViewById(R.id.tv_wire_distance_result);
+        iv_small_wire= viewResults.findViewById(R.id.iv_small_wire);
+        iv_medium_wire= viewResults.findViewById(R.id.iv_medium_wire);
+        iv_large_wire= viewResults.findViewById(R.id.iv_large_wire);
+        sp_source_voltage = viewReq.findViewById(R.id.sp_source_voltage);
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
+                R.array.voltages,android.R.layout.simple_spinner_item );
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        sp_source_voltage.setAdapter(adapter);
+        sp_source_voltage.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                voltage = determineVoltage(i);
+            }
+            @Override
+            public void onNothingSelected(AdapterView<?> adapterView) {
+
+            }
+        });
+        btn_calculate = viewResults.findViewById(R.id.btn_calculate);
+        btn_calculate.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                SumDbHelper dbHelper = new SumDbHelper(getApplicationContext());
+                mDb = dbHelper.getWritableDatabase();
+                ContentValues contentValues = new ContentValues();
+                contentValues.put(SumTaskContract.SummaryEntry.COLUMN_SYSTEM, "Power Cable");
+                contentValues.put(SumTaskContract.SummaryEntry.COLUMN_SUMMARY, "Max cable distance");
+                Cursor cursor = mDb.query(SumTaskContract.SummaryEntry.TABLE_NAME, null, null,null,null,null,null);
+                if(cursor.moveToFirst()){
+                    mDb.update(SumTaskContract.SummaryEntry.TABLE_NAME, contentValues,null, null);
+                    Log.d("Widget PwrLoads", "update");
+                }else {
+                    long insert  =mDb.insert(SumTaskContract.SummaryEntry.TABLE_NAME, null, contentValues);
+                    Log.d("Widget PwrLoads", "insert");
+                }
+                SummaryService.startActionUpdateSum(getApplicationContext());
+            }
+        });
+
+    }
+    private int determineVoltage(int voltageIndex){
+        switch(voltageIndex){
+            case 0: return 12;
+            case 1: return 24;
+            case 2: return 48;
+            case 3: return 120;
+            case 4: return 220;
+            default: return 120;
+        }
     }
 }
