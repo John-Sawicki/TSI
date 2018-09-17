@@ -5,6 +5,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -46,8 +47,8 @@ public class PowerLoadsActivity extends AppCompatActivity {
         btn_calculate.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                int qty1 = Integer.parseInt(et_qty_1.getText().toString());
-                int watt1 = Integer.parseInt(et_watt_1.getText().toString());
+                if (TextUtils.isEmpty(et_qty_1.getText().toString()));    int qty1 = Integer.parseInt(et_qty_1.getText().toString());
+                if (TextUtils.isEmpty(et_watt_1.getText().toString()));    int watt1 = Integer.parseInt(et_watt_1.getText().toString());
                 int qty2 = Integer.parseInt(et_qty_2.getText().toString());
                 int watt2 = Integer.parseInt(et_watt_2.getText().toString());
                 int line1 = qty1 *watt1;

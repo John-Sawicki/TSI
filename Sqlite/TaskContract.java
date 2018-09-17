@@ -14,6 +14,7 @@ public class TaskContract {
         public static final String DATE ="date";                 //0
         public static final String SYSTEM ="system";             //1
         public static final String DESCRIPTION ="description";   //2
-        public static final String STATUS ="status";             //3
+        public static final String LOCATION = "location";        //3
+        public static final String STATUS ="status";             //4
     }
 }

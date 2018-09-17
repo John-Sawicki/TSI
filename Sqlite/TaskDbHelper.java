@@ -19,6 +19,7 @@ public class TaskDbHelper  extends SQLiteOpenHelper{
                 TaskEntry.DATE+" INTEGER NOT NULL, "+   //add time in ms to db
                 TaskEntry.SYSTEM+" TEXT NOT NULL, "+
                 TaskEntry.DESCRIPTION+" TEXT NOT NULL, "+
+                TaskEntry.LOCATION+" TEXT NOT NULL, "+
                 TaskEntry.STATUS+" TEXT NOT NULL);";
         sqLiteDatabase.execSQL(SQL_CREATE_TASK_LIST);
     }

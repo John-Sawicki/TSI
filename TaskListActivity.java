@@ -1,9 +1,11 @@
 package com.example.android.tsi;
 
 import android.content.ContentValues;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -23,7 +25,7 @@ import com.example.android.tsi.Sqlite.TaskContract.TaskEntry;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
-
+import com.example.android.tsi.Sqlite.TaskContract.TaskEntry;
 public class TaskListActivity extends AppCompatActivity {
     @BindView(R.id.et_task_entry) EditText et_task_entry;
     @BindView(R.id.sp_system_name)Spinner sp_system_name;
@@ -31,7 +33,7 @@ public class TaskListActivity extends AppCompatActivity {
     @BindView(R.id.btn_email_report) Button btn_email_report;
     ArrayAdapter aa_spinner_system;
     private SQLiteDatabase mDb;
-    private String systemName, systemSummary;
+    private String systemName, systemSummary ="did stuff today";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -56,12 +58,38 @@ public class TaskListActivity extends AppCompatActivity {
                 contentValues.put(TaskEntry.DATE, todaysDate);
                 contentValues.put(TaskEntry.SYSTEM, systemName);
                 contentValues.put(TaskEntry.DESCRIPTION, systemSummary);
+                contentValues.put(TaskEntry.LOCATION, "Houston");
                 contentValues.put(TaskEntry.STATUS, "Complete");
-
             }
-
             @Override
             public void onNothingSelected(AdapterView<?> adapterView) {
+            TaskDbHelper dbHelper = new TaskDbHelper(getApplicationContext());
+            mDb = dbHelper.getReadableDatabase();
+                Cursor cctvCursor = mDb.query(TaskEntry.TABLE_NAME, null,"CCTV", null,null,null,null);
+                if(cctvCursor.moveToFirst()){
+                    String cctvSummary="";
+                    for(int i = 0; i<cctvCursor.getCount(); i++){
+                        cctvCursor.moveToPosition(i);
+                        String cctvTask = cctvCursor.getString(cctvCursor.getColumnIndex(TaskEntry.DESCRIPTION));
+                        Log.d("task query", cctvTask);
+                        cctvSummary +=cctvTask;
+                    }
+                }
+                Cursor lanCursor = mDb.query(TaskEntry.TABLE_NAME, null,"LAN", null,null,null,null);
+                if(cctvCursor.moveToFirst()){
+                    String lanSummary="";
+                    for(int i = 0; i<lanCursor.getCount(); i++){
+                        lanCursor.moveToPosition(i);
+                        String lanTask = lanCursor.getString(lanCursor.getColumnIndex(TaskEntry.DESCRIPTION));
+                        Log.d("task query", lanTask);
+                        lanSummary +=lanTask;
+                    }
+                }
+            }
+        });
+        btn_email_report.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
 
             }
         });
