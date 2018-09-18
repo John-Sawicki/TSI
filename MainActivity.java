@@ -7,11 +7,12 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 
+import com.example.android.tsi.utilities.ApiKey;
 import com.example.android.tsi.utilities.SystemAdapter;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
-
+import com.google.android.gms.ads.MobileAds;
 public class MainActivity extends AppCompatActivity implements SystemAdapter.SystemOnClickInterface  {
     @BindView(R.id.rv_system_name)RecyclerView mRecyclerView;
     private SystemAdapter mSystemAdapter;
@@ -25,6 +26,7 @@ public class MainActivity extends AppCompatActivity implements SystemAdapter.Sys
         mRecyclerView.setHasFixedSize(true);
         mSystemAdapter = new SystemAdapter(this);
         mRecyclerView.setAdapter(mSystemAdapter);
+        MobileAds.initialize(this, ApiKey.AdmobKey);
     }
 
     @Override
