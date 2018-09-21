@@ -49,6 +49,7 @@ public class PowerCableActivity extends AppCompatActivity {
         View viewReq = findViewById(R.id.lo_top_right);
         View viewResults = findViewById(R.id.lo_bottom_right);
         et_voltage =viewReq.findViewById(R.id.et_voltage);
+       // voltage=et_voltage.toString()
         et_amperage = viewReq.findViewById(R.id.et_amperage);
         et_wattage = viewReq.findViewById(R.id.et_wattage);
         et_distance = viewReq.findViewById(R.id.et_distance);
@@ -97,6 +98,24 @@ public class PowerCableActivity extends AppCompatActivity {
                     Log.d("Widget PwrLoads", "insert");
                 }
                 SummaryService.startActionUpdateSum(getApplicationContext());
+            /*
+                double totalVdrop = vSource*percentDrop;
+                double cableDrop = totalVdrop- (vSource - vParent);
+                double current = wPower/ vParent;
+                double rMax = cableDrop/current;
+                if( (distance/1000)*1.588< rMax) return 12;
+                if( (distance/1000)*0.9989< rMax) return 10;
+                if( (distance/1000)*0.6282< rMax) return 8;
+                if( (distance/1000)*0.3951< rMax) return 6;
+                if( (distance/1000)*0.2485< rMax) return 4;
+                if( (distance/1000)*0.1563< rMax) return 2;
+
+                if(gauge ==12){
+                    (rMax/0.9989)*1000 = distance1;	//10AWG
+                    (rMax/0.0.6282)*1000 = distance2;//8AWG
+
+                }
+            */
             }
         });
 

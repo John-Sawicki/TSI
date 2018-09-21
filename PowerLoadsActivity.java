@@ -87,6 +87,18 @@ public class PowerLoadsActivity extends AppCompatActivity {
         });
     }
     private int breakerSize(double power){
+        double current = power;
+        double breakerSize = current/0.8;
+        if(breakerSize<1) return 1;
+        if(breakerSize<2) return 2;
+        if(breakerSize<5) return 5;
+        if(breakerSize<10) return 10;
+        if(breakerSize<15) return 15;
+        if(breakerSize<20) return 20;
+        if(breakerSize<25) return 25;
+        if(breakerSize<30) return 30;
+        if(breakerSize<40) return 40;
+        if(breakerSize<50) return 50;
         return 0;
     }
 }
