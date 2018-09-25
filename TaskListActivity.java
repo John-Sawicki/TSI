@@ -1,8 +1,11 @@
 package com.example.android.tsi;
 
 import android.content.ContentValues;
+import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.location.Location;
+import android.location.LocationManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -26,14 +29,17 @@ import com.example.android.tsi.Sqlite.TaskContract.TaskEntry;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import com.example.android.tsi.Sqlite.TaskContract.TaskEntry;
+import com.example.android.tsi.utilities.LocationClass;
+
 public class TaskListActivity extends AppCompatActivity {
     @BindView(R.id.et_task_entry) EditText et_task_entry;
     @BindView(R.id.sp_system_name)Spinner sp_system_name;
     @BindView(R.id.tv_completed_tasks) TextView tv_completed_tasks;
     @BindView(R.id.btn_email_report) Button btn_email_report;
+    @BindView(R.id.btn_add_task)Button btn_add_task;
     ArrayAdapter aa_spinner_system;
     private SQLiteDatabase mDb;
-    private String systemName, systemSummary ="did stuff today";
+    private String systemName,location="Earth list", systemSummary ="did stuff today";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -48,23 +54,18 @@ public class TaskListActivity extends AppCompatActivity {
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
                 //i is the value of the array index for the systems
                 systemName = determineSystem(i);    //used to search a column in the db
-                Toast.makeText(getApplicationContext(), "Added "+systemName+" task to list.", Toast.LENGTH_SHORT).show();
-                systemSummary = et_task_entry.getText().toString();
-                TaskDbHelper dbHelper = new TaskDbHelper(getApplicationContext());
-                mDb = dbHelper.getWritableDatabase();
-                ContentValues contentValues = new ContentValues();
-                SimpleDateFormat sdf = new SimpleDateFormat("MM-dd-yyyy");
-                String todaysDate = sdf.format(new Date());
-                contentValues.put(TaskEntry.DATE, todaysDate);
-                contentValues.put(TaskEntry.SYSTEM, systemName);
-                contentValues.put(TaskEntry.DESCRIPTION, systemSummary);
-                contentValues.put(TaskEntry.LOCATION, "Houston");
-                contentValues.put(TaskEntry.STATUS, "Complete");
+
             }
             @Override
             public void onNothingSelected(AdapterView<?> adapterView) {
-            TaskDbHelper dbHelper = new TaskDbHelper(getApplicationContext());
-            mDb = dbHelper.getReadableDatabase();
+
+            }
+        });
+        btn_email_report.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                TaskDbHelper dbHelper = new TaskDbHelper(getApplicationContext());
+                mDb = dbHelper.getReadableDatabase();
                 Cursor cctvCursor = mDb.query(TaskEntry.TABLE_NAME, null,"CCTV", null,null,null,null);
                 if(cctvCursor.moveToFirst()){
                     String cctvSummary="";
@@ -87,10 +88,24 @@ public class TaskListActivity extends AppCompatActivity {
                 }
             }
         });
-        btn_email_report.setOnClickListener(new View.OnClickListener() {
+        btn_add_task.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
+                Toast.makeText(getApplicationContext(), "Added "+systemName+" task to list.", Toast.LENGTH_SHORT).show();
+                systemSummary = et_task_entry.getText().toString();
+                TaskDbHelper dbHelper = new TaskDbHelper(getApplicationContext());
+                mDb = dbHelper.getWritableDatabase();
+                ContentValues contentValues = new ContentValues();
+                SimpleDateFormat sdf = new SimpleDateFormat("MM-dd-yyyy");
+                String todaysDate = sdf.format(new Date());
+                contentValues.put(TaskEntry.DATE, todaysDate);
+                contentValues.put(TaskEntry.SYSTEM, systemName);
+                contentValues.put(TaskEntry.DESCRIPTION, systemSummary);
+                LocationClass locationClass = new LocationClass();
+                //location = locationClass.getLocation(getApplicationContext());
+                Log.d("location tastAct", location);
+                contentValues.put(TaskEntry.LOCATION, location);
+                contentValues.put(TaskEntry.STATUS, "Complete");
             }
         });
     }
