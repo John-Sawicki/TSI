@@ -12,9 +12,17 @@ import com.example.android.tsi.utilities.SystemAdapter;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdSize;
+import com.google.android.gms.ads.AdView;
 import com.google.android.gms.ads.MobileAds;
+
+import static com.example.android.tsi.utilities.ApiKey.bannerAdKey;
+
 public class MainActivity extends AppCompatActivity implements SystemAdapter.SystemOnClickInterface  {
     @BindView(R.id.rv_system_name)RecyclerView mRecyclerView;
+    @BindView(R.id.adViewBanner) AdView adViewBanner;
     private SystemAdapter mSystemAdapter;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,7 +34,8 @@ public class MainActivity extends AppCompatActivity implements SystemAdapter.Sys
         mRecyclerView.setHasFixedSize(true);
         mSystemAdapter = new SystemAdapter(this);
         mRecyclerView.setAdapter(mSystemAdapter);
-        MobileAds.initialize(this, ApiKey.AdmobKey);
+        AdRequest adRequest = new AdRequest.Builder().build();
+        adViewBanner.loadAd(adRequest);
     }
 
     @Override
