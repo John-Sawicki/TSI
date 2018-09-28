@@ -30,6 +30,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import com.example.android.tsi.Sqlite.TaskContract.TaskEntry;
 import com.example.android.tsi.utilities.LocationClass;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdView;
 
 public class TaskListActivity extends AppCompatActivity {
     @BindView(R.id.et_task_entry) EditText et_task_entry;
@@ -37,6 +39,7 @@ public class TaskListActivity extends AppCompatActivity {
     @BindView(R.id.tv_completed_tasks) TextView tv_completed_tasks;
     @BindView(R.id.btn_email_report) Button btn_email_report;
     @BindView(R.id.btn_add_task)Button btn_add_task;
+    @BindView(R.id.adViewBanner) AdView adViewBanner;
     ArrayAdapter aa_spinner_system;
     private SQLiteDatabase mDb;
     private String systemName,location="Earth list", systemSummary ="did stuff today";
@@ -45,6 +48,8 @@ public class TaskListActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_task_list);
         ButterKnife.bind(this);
+        AdRequest adRequest = new AdRequest.Builder().build();
+        adViewBanner.loadAd(adRequest);
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
                 R.array.system_array, android.R.layout.simple_spinner_item);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);

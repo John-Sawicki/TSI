@@ -18,6 +18,8 @@ import android.widget.TextView;
 import com.example.android.tsi.SqliteSum.SumDbHelper;
 import com.example.android.tsi.SqliteSum.SumTaskContract;
 import com.example.android.tsi.Widget.SummaryService;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdView;
 
 import butterknife.BindView;
 
@@ -34,20 +36,23 @@ public class PowerCableActivity extends AppCompatActivity {
     @BindView(R.id.tv_wire_gauge_result)TextView tv_wire_gauge_result;
     @BindView(R.id.tv_wire_distance_result) TextView tv_wire_distance_result;
     */
-    private Spinner sp_source_voltage;
-    private EditText et_voltage, et_amperage, et_wattage, et_distance, et_percent_drop;
-    private TextView tv_small_wire, tv_small_distance, tv_medium_wire, tv_medium_distance, tv_large_wire,tv_large_distance,
+    protected Spinner sp_source_voltage;
+    protected EditText et_voltage, et_amperage, et_wattage, et_distance, et_percent_drop;
+    protected TextView tv_small_wire, tv_small_distance, tv_medium_wire, tv_medium_distance, tv_large_wire,tv_large_distance,
     tv_wire_gauge_result, tv_wire_distance_result;
-    private ImageView iv_small_wire, iv_medium_wire, iv_large_wire;
-    private Button btn_calculate;
+    protected ImageView iv_small_wire, iv_medium_wire, iv_large_wire;
+    protected Button btn_calculate;
     private SQLiteDatabase mDb;
     private int voltage;
+    @BindView(R.id.adViewBanner) AdView adViewBanner;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_power_cable);
         View viewReq = findViewById(R.id.lo_top_right);
         View viewResults = findViewById(R.id.lo_bottom_right);
+        AdRequest adRequest = new AdRequest.Builder().build();
+        adViewBanner.loadAd(adRequest);
         et_voltage =viewReq.findViewById(R.id.et_voltage);
        // voltage=et_voltage.toString()
         et_amperage = viewReq.findViewById(R.id.et_amperage);

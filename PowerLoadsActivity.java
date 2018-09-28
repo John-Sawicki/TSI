@@ -18,6 +18,8 @@ import com.example.android.tsi.SqliteSum.SumTaskContract;
 import butterknife.BindView;
 import com.example.android.tsi.SqliteSum.SumTaskContract.SummaryEntry;
 import com.example.android.tsi.Widget.SummaryService;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdView;
 
 public class PowerLoadsActivity extends AppCompatActivity {
     //TODO add preference fragment for source voltage
@@ -27,12 +29,15 @@ public class PowerLoadsActivity extends AppCompatActivity {
     private Button btn_calculate;
     private int voltage = 120;
     private SQLiteDatabase mDb;
+    @BindView(R.id.adViewBanner) AdView adViewBanner;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_power_loads);
         View viewLoads = findViewById(R.id.lo_top_left);
         View viewResults = findViewById(R.id.lo_bottom_right);
+        AdRequest adRequest = new AdRequest.Builder().build();
+        adViewBanner.loadAd(adRequest);
         et_qty_1 = viewLoads.findViewById(R.id.et_qty_1);
         et_watt_1 = viewLoads.findViewById(R.id.et_watt_1);
         tv_line_total_1 = viewLoads.findViewById(R.id.tv_line_total_1);

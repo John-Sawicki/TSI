@@ -9,6 +9,9 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdView;
+
 import butterknife.BindView;
 
 public class PagaActivity extends AppCompatActivity {
@@ -18,12 +21,15 @@ public class PagaActivity extends AppCompatActivity {
     TextView tv_db_level1, tv_distance1, tv_db_level2, tv_distance2, tv_db_level3, tv_distance3, tv_db_level4, tv_distance4, tv_db_level5, tv_distance5, tv_db_level6, tv_distance6;
     Button btn_calculate;
     EditText et_speaker_output;
+    @BindView(R.id.adViewBanner) AdView adViewBanner;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_paga);
         View viewCircle = findViewById(R.id.lo_top_right);
         View viewDb = findViewById(R.id.lo_bottom_left);
+        AdRequest adRequest = new AdRequest.Builder().build();
+        adViewBanner.loadAd(adRequest);
         mFrameBackground = viewCircle.findViewById(R.id.im_background);
         ivCircle0 = viewCircle.findViewById(R.id.im_circle0);
         ivCircle1= viewCircle.findViewById(R.id.im_circle1);
