@@ -1,6 +1,8 @@
 package com.example.android.tsi;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
@@ -20,10 +22,11 @@ import com.google.android.gms.ads.MobileAds;
 
 import static com.example.android.tsi.utilities.ApiKey.bannerAdKey;
 
-public class MainActivity extends AppCompatActivity implements SystemAdapter.SystemOnClickInterface  {
+public class MainActivity extends AppCompatActivity implements SystemAdapter.SystemOnClickInterface, SharedPreferences.OnSharedPreferenceChangeListener {
     @BindView(R.id.rv_system_name)RecyclerView mRecyclerView;
     @BindView(R.id.adViewBanner) AdView adViewBanner;
     private SystemAdapter mSystemAdapter;
+    private boolean imperial = true;//true for US black and green color code
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -36,6 +39,21 @@ public class MainActivity extends AppCompatActivity implements SystemAdapter.Sys
         mRecyclerView.setAdapter(mSystemAdapter);
         AdRequest adRequest = new AdRequest.Builder().build();
         adViewBanner.loadAd(adRequest);
+        setUpPreferences();
+    }
+    private void setUpPreferences() {//sets up preferences when the user reopens the activity
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+        sharedPref.registerOnSharedPreferenceChangeListener(this);
+        imperial = sharedPref.getBoolean(getResources().getString(R.string.pref_units_key), true);
+        Log.d("pref fragment", imperial+" setup");
+    }
+
+    @Override//updates the activity once the units system has changed
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        if(key.equals(getResources().getString(R.string.pref_units_key))){
+            imperial = sharedPreferences.getBoolean(getResources().getString(R.string.pref_units_key), true);
+            Log.d("pref fragment", imperial+" changed");
+        }
     }
 
     @Override
