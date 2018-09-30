@@ -1,12 +1,17 @@
 package com.example.android.tsi;
 
 import android.content.ContentValues;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -16,12 +21,15 @@ import com.example.android.tsi.SqliteSum.SumDbHelper;
 import com.example.android.tsi.SqliteSum.SumTaskContract;
 
 import butterknife.BindView;
+import butterknife.ButterKnife;
+
 import com.example.android.tsi.SqliteSum.SumTaskContract.SummaryEntry;
 import com.example.android.tsi.Widget.SummaryService;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.MobileAds;
 
-public class PowerLoadsActivity extends AppCompatActivity {
+public class PowerLoadsActivity extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener {
     //TODO add preference fragment for source voltage
     //TODO add preference for pf value
     private TextView tv_line_total_1, tv_line_total_2,tv_total_power_result, tv_total_pdu_result, tv_total_ups_result,tv_breaker_result;
@@ -29,15 +37,19 @@ public class PowerLoadsActivity extends AppCompatActivity {
     private Button btn_calculate;
     private int voltage = 120;
     private SQLiteDatabase mDb;
+    private boolean imperial = true;
     @BindView(R.id.adViewBanner) AdView adViewBanner;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_power_loads);
+        ButterKnife.bind(this);
         View viewLoads = findViewById(R.id.lo_top_left);
         View viewResults = findViewById(R.id.lo_bottom_right);
+        MobileAds.initialize(this, "ca-app-pub-8686454969066832~6147856904");
         AdRequest adRequest = new AdRequest.Builder().build();
         adViewBanner.loadAd(adRequest);
+        setUpPreferences();
         et_qty_1 = viewLoads.findViewById(R.id.et_qty_1);
         et_watt_1 = viewLoads.findViewById(R.id.et_watt_1);
         tv_line_total_1 = viewLoads.findViewById(R.id.tv_line_total_1);
@@ -105,5 +117,33 @@ public class PowerLoadsActivity extends AppCompatActivity {
         if(breakerSize<40) return 40;
         if(breakerSize<50) return 50;
         return 0;
+    }
+    private void setUpPreferences() {//sets up preferences when the user reopens the activity
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+        sharedPref.registerOnSharedPreferenceChangeListener(this);
+        imperial = sharedPref.getBoolean(getResources().getString(R.string.pref_units_key), true);
+        Log.d("pref fragment", imperial+" setup");
+    }
+    @Override//updates the activity once the units system has changed
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        if(key.equals(getResources().getString(R.string.pref_units_key))){
+            imperial = sharedPreferences.getBoolean(getResources().getString(R.string.pref_units_key), true);
+            Log.d("pref fragment", imperial+" changed");
+        }
+    }
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main, menu);
+        return true;
+    }
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int itemClicked = item.getItemId();
+        if(itemClicked==R.id.shared_pref){
+            Log.d("menu", "menu clicked");
+            startActivity(new Intent(PowerLoadsActivity.this, SettingsActivity.class));
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 }

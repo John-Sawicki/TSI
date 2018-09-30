@@ -8,6 +8,8 @@ import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 
 import com.example.android.tsi.utilities.ApiKey;
 import com.example.android.tsi.utilities.SystemAdapter;
@@ -25,6 +27,7 @@ import static com.example.android.tsi.utilities.ApiKey.bannerAdKey;
 public class MainActivity extends AppCompatActivity implements SystemAdapter.SystemOnClickInterface, SharedPreferences.OnSharedPreferenceChangeListener {
     @BindView(R.id.rv_system_name)RecyclerView mRecyclerView;
     @BindView(R.id.adViewBanner) AdView adViewBanner;
+    //private AdView adViewBanner;
     private SystemAdapter mSystemAdapter;
     private boolean imperial = true;//true for US black and green color code
     @Override
@@ -37,6 +40,8 @@ public class MainActivity extends AppCompatActivity implements SystemAdapter.Sys
         mRecyclerView.setHasFixedSize(true);
         mSystemAdapter = new SystemAdapter(this);
         mRecyclerView.setAdapter(mSystemAdapter);
+        //adViewBanner = findViewById(R.id.adViewBanner);
+        MobileAds.initialize(this, "ca-app-pub-8686454969066832~6147856904");
         AdRequest adRequest = new AdRequest.Builder().build();
         adViewBanner.loadAd(adRequest);
         setUpPreferences();
@@ -47,7 +52,6 @@ public class MainActivity extends AppCompatActivity implements SystemAdapter.Sys
         imperial = sharedPref.getBoolean(getResources().getString(R.string.pref_units_key), true);
         Log.d("pref fragment", imperial+" setup");
     }
-
     @Override//updates the activity once the units system has changed
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         if(key.equals(getResources().getString(R.string.pref_units_key))){
@@ -55,7 +59,6 @@ public class MainActivity extends AppCompatActivity implements SystemAdapter.Sys
             Log.d("pref fragment", imperial+" changed");
         }
     }
-
     @Override
     public void onClick(int index) {
         Log.d("MainAct onClick", "click index "+index);
@@ -76,5 +79,20 @@ public class MainActivity extends AppCompatActivity implements SystemAdapter.Sys
                     break;
         }
         startActivity(intent);
+    }
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main, menu);
+        return true;
+    }
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int itemClicked = item.getItemId();
+        if(itemClicked==R.id.shared_pref){
+            Log.d("menu", "menu clicked");
+            startActivity(new Intent(MainActivity.this, SettingsActivity.class));
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 }

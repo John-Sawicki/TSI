@@ -2,13 +2,18 @@ package com.example.android.tsi;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.location.Location;
 import android.location.LocationManager;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -32,8 +37,9 @@ import com.example.android.tsi.Sqlite.TaskContract.TaskEntry;
 import com.example.android.tsi.utilities.LocationClass;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.MobileAds;
 
-public class TaskListActivity extends AppCompatActivity {
+public class TaskListActivity extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener{
     @BindView(R.id.et_task_entry) EditText et_task_entry;
     @BindView(R.id.sp_system_name)Spinner sp_system_name;
     @BindView(R.id.tv_completed_tasks) TextView tv_completed_tasks;
@@ -42,14 +48,17 @@ public class TaskListActivity extends AppCompatActivity {
     @BindView(R.id.adViewBanner) AdView adViewBanner;
     ArrayAdapter aa_spinner_system;
     private SQLiteDatabase mDb;
+    private boolean imperial = true;
     private String systemName,location="Earth list", systemSummary ="did stuff today";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_task_list);
         ButterKnife.bind(this);
+        MobileAds.initialize(this, "ca-app-pub-8686454969066832~6147856904");
         AdRequest adRequest = new AdRequest.Builder().build();
         adViewBanner.loadAd(adRequest);
+        setUpPreferences();
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
                 R.array.system_array, android.R.layout.simple_spinner_item);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -127,5 +136,33 @@ public class TaskListActivity extends AppCompatActivity {
             case 8: return "UPS";
             default: return "Misc.";
         }
+    }
+    private void setUpPreferences() {//sets up preferences when the user reopens the activity
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+        sharedPref.registerOnSharedPreferenceChangeListener(this);
+        imperial = sharedPref.getBoolean(getResources().getString(R.string.pref_units_key), true);
+        Log.d("pref fragment", imperial+" setup");
+    }
+    @Override//updates the activity once the units system has changed
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        if(key.equals(getResources().getString(R.string.pref_units_key))){
+            imperial = sharedPreferences.getBoolean(getResources().getString(R.string.pref_units_key), true);
+            Log.d("pref fragment", imperial+" changed");
+        }
+    }
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main, menu);
+        return true;
+    }
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int itemClicked = item.getItemId();
+        if(itemClicked==R.id.shared_pref){
+            Log.d("menu", "menu clicked");
+            startActivity(new Intent(TaskListActivity.this, SettingsActivity.class));
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 }
