@@ -15,6 +15,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -49,7 +50,7 @@ public class TaskListActivity extends AppCompatActivity implements SharedPrefere
     ArrayAdapter aa_spinner_system;
     private SQLiteDatabase mDb;
     private boolean imperial = true;
-    private String systemName,location="Earth list", systemSummary ="did stuff today";
+    private String systemName,location="TBD", systemSummary ="did stuff today";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -112,17 +113,20 @@ public class TaskListActivity extends AppCompatActivity implements SharedPrefere
                 ContentValues contentValues = new ContentValues();
                 SimpleDateFormat sdf = new SimpleDateFormat("MM-dd-yyyy");
                 String todaysDate = sdf.format(new Date());
+                Log.d("task date", todaysDate);
                 contentValues.put(TaskEntry.DATE, todaysDate);
                 contentValues.put(TaskEntry.SYSTEM, systemName);
+                Log.d("task summary", systemSummary);
                 contentValues.put(TaskEntry.DESCRIPTION, systemSummary);
                 LocationClass locationClass = new LocationClass();
-                //location = locationClass.getLocation(getApplicationContext());
-                Log.d("location tastAct", location);
+                location = locationClass.getLocation(getApplicationContext());
+                Log.d("task location", location);
                 contentValues.put(TaskEntry.LOCATION, location);
                 contentValues.put(TaskEntry.STATUS, "Complete");
             }
         });
     }
+
     private String determineSystem(int systemIndex){
         switch(systemIndex){
             case 0: return "CCTV";

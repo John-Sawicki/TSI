@@ -19,21 +19,27 @@ public class LocationClass {
     double[] latLong ={0,0};
     String locationString="Earth", urlBase = "https://maps.googleapis.com/maps/api/geocode/json?latlng="+latLong[0]+","+latLong[1]+"&key="+ApiKey.GoogleApiKey;
     public  String getLocation(Context context){
-        String provider;
         Geocoder geocoder;
         double lat=0.0, longitude = 0.0;
 
         //https://maps.googleapis.com/maps/api/geocode/json?latlng=40.714224,-73.961452&key=API_Key
-
-        List<Address> user = null;
-        LocationManager lm = (LocationManager)context.getSystemService(Context.LOCATION_SERVICE);
-        Criteria criteria = new Criteria();
-        provider = lm.getBestProvider(criteria, false);
         try{
+            LocationManager lm = (LocationManager)context.getSystemService(Context.LOCATION_SERVICE);
+            Criteria criteria = new Criteria();
+            String provider = lm.getBestProvider(criteria, false);
             Location location =lm.getLastKnownLocation(provider);
+            if(location!=null){
+                latLong[0]=location.getLatitude();
+                latLong[1]= location.getLongitude();
+            }else{
+                latLong[0]=40.714224;
+                latLong[1]= -73.961452;
+            }
+
             geocoder = new Geocoder(context);
-            latLong[0] = user.get(0).getLatitude();
-            latLong[1] = user.get(0).getLongitude();
+            //List<Address> user = null;
+            //latLong[0] = user.get(0).getLatitude();
+            //latLong[1] = user.get(0).getLongitude();
             Log.d("location",latLong[0]+" "+latLong[1]);
             new AsysncLocationTask().execute(latLong);
             return locationString;
@@ -47,6 +53,7 @@ public class LocationClass {
         protected String doInBackground(double[]... doubleLatLong) {
             String asyncLocation;
             String rawJson = "https://maps.googleapis.com/maps/api/geocode/json?latlng="+doubleLatLong[0]+","+doubleLatLong[1]+"&key="+ApiKey.GoogleApiKey;
+            Log.d("location rawJson",rawJson);
             try{
                 JSONObject locationJson = new JSONObject(rawJson);
                 asyncLocation = locationJson.getString("formatted_address");

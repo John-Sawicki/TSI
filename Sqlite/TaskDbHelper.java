@@ -23,7 +23,6 @@ public class TaskDbHelper  extends SQLiteOpenHelper{
                 TaskEntry.STATUS+" TEXT NOT NULL);";
         sqLiteDatabase.execSQL(SQL_CREATE_TASK_LIST);
     }
-
     @Override
     public void onUpgrade(SQLiteDatabase sqLiteDatabase, int i, int i1) {
         sqLiteDatabase.execSQL(TaskEntry.TABLE_NAME);
