@@ -4,11 +4,14 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.location.Location;
 import android.location.LocationManager;
 import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -39,7 +42,13 @@ import com.example.android.tsi.utilities.LocationClass;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
 import com.google.android.gms.ads.MobileAds;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.nispok.snackbar.Snackbar;
 
+import android.Manifest;
 public class TaskListActivity extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener{
     @BindView(R.id.et_task_entry) EditText et_task_entry;
     @BindView(R.id.sp_system_name)Spinner sp_system_name;
@@ -49,8 +58,9 @@ public class TaskListActivity extends AppCompatActivity implements SharedPrefere
     @BindView(R.id.adViewBanner) AdView adViewBanner;
     ArrayAdapter aa_spinner_system;
     private SQLiteDatabase mDb;
-    private boolean imperial = true;
+    private boolean imperial = true, asyncDone = false;
     private String systemName,location="TBD", systemSummary ="did stuff today";
+    double[] latLong ={0,0};
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -119,7 +129,18 @@ public class TaskListActivity extends AppCompatActivity implements SharedPrefere
                 Log.d("task summary", systemSummary);
                 contentValues.put(TaskEntry.DESCRIPTION, systemSummary);
                 LocationClass locationClass = new LocationClass();
-                location = locationClass.getLocation(getApplicationContext());
+                asyncDone =false;
+                latLong =taskLocationClass();
+                //Log.d("task location", latLong[0]+" "+latLong[1]);
+                //location = locationClass.getLocation(taskLocationClass());
+                if(asyncDone==false){
+                    try{
+                        Thread.sleep(100); //yes I know this defeats the purpose of async thread
+                    }catch (InterruptedException e){
+                        location = "Unable to determine location.";
+                    }
+
+                }
                 Log.d("task location", location);
                 contentValues.put(TaskEntry.LOCATION, location);
                 contentValues.put(TaskEntry.STATUS, "Complete");
@@ -169,4 +190,45 @@ public class TaskListActivity extends AppCompatActivity implements SharedPrefere
         }
         return super.onOptionsItemSelected(item);
     }
+    private double[] taskLocationClass(){
+        boolean permission;
+        FusedLocationProviderClient mFusedLocationClient;
+        Location mLastLocation;
+        boolean mAddressRequested;
+        String mAddressOutput;
+        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+        permission = checkPermissions();    Log.d("location", "permission is "+permission);
+        if(!checkPermissions()){
+            requestPermissions();
+        }else {
+            try{
+                mFusedLocationClient.getLastLocation().addOnSuccessListener(this, new OnSuccessListener<Location>() {
+                    @Override
+                    public void onSuccess(Location location) {
+                        latLong[0]=location.getLatitude();
+                        latLong[1]= location.getLongitude();
+                        Log.d("location act",latLong[0]+" "+latLong[1]);
+                    }
+                });
+            }catch (SecurityException e){
+                //no lat long can be found
+            }
+        }
+        return null;
+    }
+    private boolean checkPermissions() {
+        int permissionState = ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION);
+        return permissionState == PackageManager.PERMISSION_GRANTED;
+    }
+    private void requestPermissions(){
+        boolean shouldProvideRationale = ActivityCompat.shouldShowRequestPermissionRationale(
+                this, Manifest.permission.ACCESS_FINE_LOCATION);
+        if(shouldProvideRationale){
+            Log.i("location permission","rational for permis" );
+
+        }
+    }
+
+
 }
