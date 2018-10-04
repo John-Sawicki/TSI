@@ -105,7 +105,6 @@ public class PagaActivity extends AppCompatActivity implements SharedPreferences
                         ivCircle1.setColorFilter(getResources().getColor(R.color.circle_35_LightGreen));
                         ivCircle0.setColorFilter(getResources().getColor(R.color.circle_3_Green));
                         mFrameBackground.setBackgroundColor(getResources().getColor(R.color.circle_25_Teal));
-
                     }
                     if(power>=30&&power<50){
                         ivCircle9.setColorFilter(getResources().getColor(R.color.circle_7_Orange));
@@ -174,9 +173,47 @@ public class PagaActivity extends AppCompatActivity implements SharedPreferences
                         Long l6 = Math.round( unifCo*sqrt(  pow(10, ((spl-60)/10) ) /(4*3.14159) ));
                         tv_distance6.setText( String.valueOf(Integer.valueOf(l6.intValue())  )      );
                     }
+                    if(power>50){
+                        tv_db_level1.setText("100dB");
+                        Long l1 = Math.round( unifCo*sqrt(  pow(10, ((spl-100)/10) ) /(4*3.14159) ));
+                        tv_distance1.setText( String.valueOf(Integer.valueOf(l1.intValue())  )      );
+                        tv_db_level2.setText("90dB");
+                        Long l2 = Math.round( unifCo*sqrt(  pow(10, ((spl-90)/10) ) /(4*3.14159) ));
+                        tv_distance2.setText( String.valueOf(Integer.valueOf(l2.intValue())  )      );
+                        tv_db_level3.setText("80dB");
+                        Long l3 = Math.round( unifCo*sqrt(  pow(10, ((spl-80)/10) ) /(4*3.14159) ));
+                        tv_distance3.setText( String.valueOf(Integer.valueOf(l3.intValue())  )      );
+                        tv_db_level4.setText("70dB");
+                        Long l4 = Math.round( unifCo*sqrt(  pow(10, ((spl-70)/10) ) /(4*3.14159) ));
+                        tv_distance4.setText( String.valueOf(Integer.valueOf(l4.intValue())  )      );
+                        tv_db_level5.setText("60dB");
+                        Long l5 = Math.round( unifCo*sqrt(  pow(10, ((spl-60)/10) ) /(4*3.14159) ));
+                        tv_distance5.setText( String.valueOf(Integer.valueOf(l5.intValue())  )      );
+                        tv_db_level6.setText("50dB");
+                        Long l6 = Math.round( unifCo*sqrt(  pow(10, ((spl-50)/10) ) /(4*3.14159) ));
+                        tv_distance6.setText( String.valueOf(Integer.valueOf(l6.intValue())  )      );
+                    }else{
+                        tv_db_level1.setText("90dB");
+                        Long l1 = Math.round( unifCo*sqrt(  pow(10, ((spl-90)/10) ) /(4*3.14159) ));
+                        tv_distance1.setText( String.valueOf(Integer.valueOf(l1.intValue())  )      );
+                        tv_db_level2.setText("80dB");
+                        Long l2 = Math.round( unifCo*sqrt(  pow(10, ((spl-80)/10) ) /(4*3.14159) ));
+                        tv_distance2.setText( String.valueOf(Integer.valueOf(l2.intValue())  )      );
+                        tv_db_level3.setText("70dB");
+                        Long l3 = Math.round( unifCo*sqrt(  pow(10, ((spl-70)/10) ) /(4*3.14159) ));
+                        tv_distance3.setText( String.valueOf(Integer.valueOf(l3.intValue())  )      );
+                        tv_db_level4.setText("60dB");
+                        Long l4 = Math.round( unifCo*sqrt(  pow(10, ((spl-60)/10) ) /(4*3.14159) ));
+                        tv_distance4.setText( String.valueOf(Integer.valueOf(l4.intValue())  )      );
+                        tv_db_level5.setText("50dB");
+                        Long l5 = Math.round( unifCo*sqrt(  pow(10, ((spl-50)/10) ) /(4*3.14159) ));
+                        tv_distance5.setText( String.valueOf(Integer.valueOf(l5.intValue())  )      );
+                        tv_db_level6.setText("40dB");
+                        Long l6 = Math.round( unifCo*sqrt(  pow(10, ((spl-40)/10) ) /(4*3.14159) ));
+                        tv_distance6.setText( String.valueOf(Integer.valueOf(l6.intValue())  )      );
+                    }
                 }
             }
-
         });
     }
     private void setUpPreferences() {//sets up preferences when the user reopens the activity

@@ -51,6 +51,10 @@ public class PowerCableActivity extends AppCompatActivity implements SharedPrefe
     protected Button btn_calculate;
     private SQLiteDatabase mDb;
     private int voltage;
+    private double doubleZgauge = 0.078, zeroGauage = 0.0983, twoGauge = 0.1563, fourGuge = 0.2485, sixGauge = 0.3951, eightGauge = 0.6282,
+            tenGauge = 0.9989,twelveGauge = 1.588, fourteenGauge = 2.525, sixteenGgauge = 4.016,eighteenGauge = 6.385;
+    private int vSource = 120, vParent = 118, power = 200, distance = 300;
+    private double vDrop = 2.5;
     @BindView(R.id.adViewBanner) AdView adViewBanner;
     private boolean imperial = true;
     @Override
