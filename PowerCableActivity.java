@@ -134,10 +134,8 @@ public class PowerCableActivity extends AppCompatActivity implements SharedPrefe
                     Log.d("Widget PwrLoads", "insert");
                 }
                 SummaryService.startActionUpdateSum(getApplicationContext());
-
             }
         });
-
     }
     private int determineVoltage(int voltageIndex){
         switch(voltageIndex){

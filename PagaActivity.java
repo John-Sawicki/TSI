@@ -1,7 +1,10 @@
 package com.example.android.tsi;
 
+import android.content.ContentValues;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -16,6 +19,9 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.android.tsi.SqliteSum.SumDbHelper;
+import com.example.android.tsi.SqliteSum.SumTaskContract;
+import com.example.android.tsi.Widget.SummaryService;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
 import com.google.android.gms.ads.MobileAds;
@@ -35,6 +41,8 @@ public class PagaActivity extends AppCompatActivity implements SharedPreferences
     EditText et_speaker_output;
     @BindView(R.id.adViewBanner) AdView adViewBanner;
     private boolean imperial = true;
+    private SQLiteDatabase mDb;
+    String widgetDistance = "0ft";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -172,6 +180,7 @@ public class PagaActivity extends AppCompatActivity implements SharedPreferences
                         tv_db_level6.setText("60dB");
                         Long l6 = Math.round( unifCo*sqrt(  pow(10, ((spl-60)/10) ) /(4*3.14159) ));
                         tv_distance6.setText( String.valueOf(Integer.valueOf(l6.intValue())  )      );
+                        widgetDistance = String.valueOf(Integer.valueOf(l6.intValue())  );
                     }
                     if(power>50){
                         tv_db_level1.setText("100dB");
@@ -189,6 +198,7 @@ public class PagaActivity extends AppCompatActivity implements SharedPreferences
                         tv_db_level5.setText("60dB");
                         Long l5 = Math.round( unifCo*sqrt(  pow(10, ((spl-60)/10) ) /(4*3.14159) ));
                         tv_distance5.setText( String.valueOf(Integer.valueOf(l5.intValue())  )      );
+                        widgetDistance = String.valueOf(Integer.valueOf(l5.intValue())  );
                         tv_db_level6.setText("50dB");
                         Long l6 = Math.round( unifCo*sqrt(  pow(10, ((spl-50)/10) ) /(4*3.14159) ));
                         tv_distance6.setText( String.valueOf(Integer.valueOf(l6.intValue())  )      );
@@ -205,6 +215,7 @@ public class PagaActivity extends AppCompatActivity implements SharedPreferences
                         tv_db_level4.setText("60dB");
                         Long l4 = Math.round( unifCo*sqrt(  pow(10, ((spl-60)/10) ) /(4*3.14159) ));
                         tv_distance4.setText( String.valueOf(Integer.valueOf(l4.intValue())  )      );
+                        widgetDistance = String.valueOf(Integer.valueOf(l4.intValue())  );
                         tv_db_level5.setText("50dB");
                         Long l5 = Math.round( unifCo*sqrt(  pow(10, ((spl-50)/10) ) /(4*3.14159) ));
                         tv_distance5.setText( String.valueOf(Integer.valueOf(l5.intValue())  )      );
@@ -213,6 +224,20 @@ public class PagaActivity extends AppCompatActivity implements SharedPreferences
                         tv_distance6.setText( String.valueOf(Integer.valueOf(l6.intValue())  )      );
                     }
                 }
+                SumDbHelper dbHelper = new SumDbHelper(getApplicationContext());
+                mDb = dbHelper.getWritableDatabase();
+                ContentValues contentValues = new ContentValues();
+                contentValues.put(SumTaskContract.SummaryEntry.COLUMN_SYSTEM, "PAGA\n60dB Distance");
+                contentValues.put(SumTaskContract.SummaryEntry.COLUMN_SUMMARY, widgetDistance);
+                Cursor cursor = mDb.query(SumTaskContract.SummaryEntry.TABLE_NAME, null, null,null,null,null,null);
+                if(cursor.moveToFirst()){
+                    mDb.update(SumTaskContract.SummaryEntry.TABLE_NAME, contentValues,null, null);
+                    Log.d("Widget PwrLoads", "update");
+                }else {
+                    long insert  =mDb.insert(SumTaskContract.SummaryEntry.TABLE_NAME, null, contentValues);
+                    Log.d("Widget PwrLoads", "insert");
+                }
+                SummaryService.startActionUpdateSum(getApplicationContext());
             }
         });
     }

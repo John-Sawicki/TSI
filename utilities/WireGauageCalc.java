@@ -17,9 +17,10 @@ public class WireGauageCalc {
             if( (distance/1000)*fourGuge<=resistanceMax ) return "4AWG";
             if( (distance/1000)*twoGauge<=resistanceMax ) return "2AWG";
             if( (distance/1000)*zeroGauage<=resistanceMax ) return "0AWG";
-            if( (distance/1000)*doubleZgauge<=resistanceMax ) return "00AWG";
+            if( (distance*0.001)*doubleZgauge<=resistanceMax ) return "00AWG";
             return "Go really big!";
         }else{
+            //if( (distance*0.00328)*eighteenGauge<=resistanceMax ) return "1.5mm²";
             //1.5mm, 4mm, 10mm, 25mm, 35mm
             return "metric";
         }
