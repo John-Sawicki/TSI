@@ -23,6 +23,7 @@ import android.widget.TextView;
 import com.example.android.tsi.SqliteSum.SumDbHelper;
 import com.example.android.tsi.SqliteSum.SumTaskContract;
 import com.example.android.tsi.Widget.SummaryService;
+import com.example.android.tsi.utilities.WireGauageCalc;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
 import com.google.android.gms.ads.MobileAds;
@@ -53,10 +54,11 @@ public class PowerCableActivity extends AppCompatActivity implements SharedPrefe
     private int voltage;
     private double doubleZgauge = 0.078, zeroGauage = 0.0983, twoGauge = 0.1563, fourGuge = 0.2485, sixGauge = 0.3951, eightGauge = 0.6282,
             tenGauge = 0.9989,twelveGauge = 1.588, fourteenGauge = 2.525, sixteenGgauge = 4.016,eighteenGauge = 6.385;
-    private int vSource = 120, vParent = 118, power = 200, distance = 300;
-    private double vDrop = 2.5;
+    private int  vParent = 120 ;
+    private double percentDrop = 2.5, totalVdrop, parentVdrop, childVdrop, current, resistanceMax, power = 200.0, distance = 0.0;
     @BindView(R.id.adViewBanner) AdView adViewBanner;
     private boolean imperial = true;
+    String wireGauge;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -104,11 +106,25 @@ public class PowerCableActivity extends AppCompatActivity implements SharedPrefe
         btn_calculate.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                Log.d("power cable","onClick");
+                vParent= Integer.parseInt(  et_voltage.getText().toString()  ); Log.d("power cable","vParent "+vParent);
+                percentDrop = Double.parseDouble( et_percent_drop.getText().toString() );Log.d("power cable","vDrop "+percentDrop);
+                power = Double.parseDouble(  et_wattage.getText().toString() );Log.d("power cable","power "+power);
+                distance = Double.parseDouble(    et_distance.getText().toString());Log.d("power cable","distance "+distance);
+                totalVdrop = voltage*(percentDrop/100);Log.d("power cable","totalVdrop "+totalVdrop);//max voltage drop from the source voltage
+                parentVdrop = voltage - vParent;   Log.d("power cable","parentVdrop "+parentVdrop); //how much the voltage has drop to the downstream point being calculated
+                childVdrop = totalVdrop - parentVdrop; Log.d("power cable","childVdrop "+childVdrop); //how much the the voltage can drop for the given wire
+                current = power/ vParent;Log.d("power cable","current "+current);
+                resistanceMax =childVdrop/(power/vParent);Log.d("power cable","resistanceMax "+resistanceMax);  //maximum wire resistance to get the required voltage drop value
+                Log.d("power cable","distance "+distance+" rmax "+resistanceMax+" imperial "+imperial );
+                WireGauageCalc wireGauageCalc = new WireGauageCalc();
+                wireGauge = wireGauageCalc.calculateWireGauge(distance, resistanceMax, imperial);
+                Log.d("power cable",wireGauge );
                 SumDbHelper dbHelper = new SumDbHelper(getApplicationContext());
                 mDb = dbHelper.getWritableDatabase();
                 ContentValues contentValues = new ContentValues();
-                contentValues.put(SumTaskContract.SummaryEntry.COLUMN_SYSTEM, "Power Cable");
-                contentValues.put(SumTaskContract.SummaryEntry.COLUMN_SUMMARY, "Max cable distance");
+                contentValues.put(SumTaskContract.SummaryEntry.COLUMN_SYSTEM, "Power Cable\nmin. Size");
+                contentValues.put(SumTaskContract.SummaryEntry.COLUMN_SUMMARY, wireGauge);
                 Cursor cursor = mDb.query(SumTaskContract.SummaryEntry.TABLE_NAME, null, null,null,null,null,null);
                 if(cursor.moveToFirst()){
                     mDb.update(SumTaskContract.SummaryEntry.TABLE_NAME, contentValues,null, null);
@@ -118,24 +134,7 @@ public class PowerCableActivity extends AppCompatActivity implements SharedPrefe
                     Log.d("Widget PwrLoads", "insert");
                 }
                 SummaryService.startActionUpdateSum(getApplicationContext());
-            /*
-                double totalVdrop = vSource*percentDrop;
-                double cableDrop = totalVdrop- (vSource - vParent);
-                double current = wPower/ vParent;
-                double rMax = cableDrop/current;
-                if( (distance/1000)*1.588< rMax) return 12;
-                if( (distance/1000)*0.9989< rMax) return 10;
-                if( (distance/1000)*0.6282< rMax) return 8;
-                if( (distance/1000)*0.3951< rMax) return 6;
-                if( (distance/1000)*0.2485< rMax) return 4;
-                if( (distance/1000)*0.1563< rMax) return 2;
 
-                if(gauge ==12){
-                    (rMax/0.9989)*1000 = distance1;	//10AWG
-                    (rMax/0.0.6282)*1000 = distance2;//8AWG
-
-                }
-            */
             }
         });
 
