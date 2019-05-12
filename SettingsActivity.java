@@ -1,4 +1,4 @@
-package com.example.android.tsi;
+package com.john.android.tsi;
 
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -21,6 +21,5 @@ public class SettingsActivity extends PreferenceActivity implements SharedPrefer
         }
     }
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-
     }
 }

@@ -1,5 +1,7 @@
-package com.example.android.tsi;
+package com.john.android.tsi;
 
+import android.arch.lifecycle.LiveData;
+import android.arch.lifecycle.Observer;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
@@ -8,68 +10,127 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.location.Location;
+import android.location.LocationListener;
 import android.location.LocationManager;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.net.Uri;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
+import android.util.Patterns;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
-import android.widget.Toast;
-
-import com.example.android.tsi.Sqlite.TaskDbHelper;
-import com.example.android.tsi.SqliteSum.SumDbHelper;
-
+import com.john.android.tsi.Room.AppDatabase;
+import com.john.android.tsi.Room.TaskEntryRm;
 import butterknife.BindView;
 import butterknife.ButterKnife;
-
-import com.example.android.tsi.Sqlite.TaskContract.TaskEntry;
-
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import com.example.android.tsi.Sqlite.TaskContract.TaskEntry;
-import com.example.android.tsi.utilities.LocationClass;
+import java.util.List;
+import com.john.android.tsi.SqliteSum.SumDbHelper;
+import com.john.android.tsi.SqliteSum.SumTaskContract;
+import com.john.android.tsi.Widget.SummaryService;
+import com.john.android.tsi.utilities.ApiKey;
+import com.john.android.tsi.utilities.LocationAsyncTask;
+import com.john.android.tsi.utilities.LocationClass;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
 import com.google.android.gms.ads.MobileAds;
-import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.nispok.snackbar.Snackbar;
-
 import android.Manifest;
-public class TaskListActivity extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener{
+import android.widget.Toast;
+import static android.view.inputmethod.EditorInfo.IME_MASK_ACTION;
+
+public class TaskListActivity extends AppCompatActivity implements
+        SharedPreferences.OnSharedPreferenceChangeListener, LocationAsyncTask.OnAddressComplete {
     @BindView(R.id.et_task_entry) EditText et_task_entry;
     @BindView(R.id.sp_system_name)Spinner sp_system_name;
     @BindView(R.id.tv_completed_tasks) TextView tv_completed_tasks;
     @BindView(R.id.btn_email_report) Button btn_email_report;
     @BindView(R.id.btn_add_task)Button btn_add_task;
     @BindView(R.id.adViewBanner) AdView adViewBanner;
-    ArrayAdapter aa_spinner_system;
     private SQLiteDatabase mDb;
-    private boolean imperial = true, asyncDone = false;
-    private String systemName,location="TBD", systemSummary ="did stuff today";
-    double[] latLong ={0,0};
+    private boolean imperial = true, asyncDone = false, validEmail, locationUpdated = false, gpsPermission = false;
+    private String locationString="TBD", systemSummary ="did stuff today", systemName, emailSummary="", emailAddress, urlBase, taskSummary="\n";
+    private int systemInt=0;//values reference position in spinner for the system
+    private static String ACTIVITY = "TASK_LIST_ACT";
+    private AppDatabase appDb;//used for room
+    LocationManager locationManager;
+    LocationListener locationListener;
+    private double[] latLong={0,0};
+    List<TaskEntryRm> completedTasks;
+    private void updateLocation(){
+        if(ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION)==PackageManager.PERMISSION_GRANTED){
+            Location onCreateLocation =locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+            latLong[0] = onCreateLocation.getLatitude();
+            latLong[1] = onCreateLocation.getLongitude();
+            Log.d(ACTIVITY, "updateLocation latLong "+latLong[0]+" "+latLong[1]);
+        }
+        urlBase= "https://maps.googleapis.com/maps/api/geocode/json?latlng="+ latLong[0]+","+ latLong[1]+"&sensor=true&key="+ApiKey.GoogleApiKey;
+        LocationAsyncTask task = new LocationAsyncTask(TaskListActivity.this);//method b using a separate file
+        task.execute(urlBase);//value updated by the interface
+    }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if(savedInstanceState!=null){
+            latLong[0]= savedInstanceState.getDouble("latLong_zero",0.0);
+            latLong[1]= savedInstanceState.getDouble("latLong_one",0.0);
+            taskSummary = savedInstanceState.getString("taskSummary","");
+            Log.d(ACTIVITY, "savedInstance latLong "+latLong[0]+" "+latLong[1]+" "+taskSummary);
+        }
         setContentView(R.layout.activity_task_list);
         ButterKnife.bind(this);
+        tv_completed_tasks.setText(taskSummary);
         MobileAds.initialize(this, "ca-app-pub-8686454969066832~6147856904");
         AdRequest adRequest = new AdRequest.Builder().build();
         adViewBanner.loadAd(adRequest);
+        emailSummary="No tasks have been entered.";//rest to empty so when the user presses back it doesnt keep adding to the string
+        locationManager = (LocationManager)this.getSystemService(Context.LOCATION_SERVICE);
+        updateLocation();
+        locationListener = new LocationListener() {
+            @Override
+            public void onLocationChanged(Location location) {
+                Log.i(ACTIVITY, "onLocationChanged method "+location.toString());
+                latLong[0] = location.getLatitude();
+                latLong[1] = location.getLongitude();
+                Log.i(ACTIVITY, "onLocationChanged lat and lon "+Double.toString(latLong[0])+" "+Double.toString(latLong[1]));
+                LocationAsyncTask task = new LocationAsyncTask(TaskListActivity.this);//method b using a separate file
+                urlBase= "https://maps.googleapis.com/maps/api/geocode/json?latlng="+ latLong[0]+","+ latLong[1]+"&sensor=true&key="+ApiKey.GoogleApiKey;
+                task.execute(urlBase);//value updated by the interface
+            }
+            @Override
+            public void onStatusChanged(String s, int i, Bundle bundle) {
+            }
+            @Override
+            public void onProviderEnabled(String s) {
+            }
+            @Override
+            public void onProviderDisabled(String s) {
+            }
+        };
+        et_task_entry.setImeOptions(IME_MASK_ACTION);
+        if(ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)!=PackageManager.PERMISSION_GRANTED){
+            ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+        }else{//permission granted
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,2*1000, 1, locationListener);
+        }
         setUpPreferences();
+        appDb = AppDatabase.getInstance(getApplicationContext());
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
                 R.array.system_array, android.R.layout.simple_spinner_item);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -77,103 +138,164 @@ public class TaskListActivity extends AppCompatActivity implements SharedPrefere
         sp_system_name.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
-                //i is the value of the array index for the systems
-                systemName = determineSystem(i);    //used to search a column in the db
-
+                systemName = LocationClass.determineSystem(i);  Log.d(ACTIVITY, "system name" +systemName);
+                systemInt = i;//use spinner position for system name
             }
             @Override
             public void onNothingSelected(AdapterView<?> adapterView) {
-
             }
         });
         btn_email_report.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                TaskDbHelper dbHelper = new TaskDbHelper(getApplicationContext());
-                mDb = dbHelper.getReadableDatabase();
-                Cursor cctvCursor = mDb.query(TaskEntry.TABLE_NAME, null,"CCTV", null,null,null,null);
-                if(cctvCursor.moveToFirst()){
-                    String cctvSummary="";
-                    for(int i = 0; i<cctvCursor.getCount(); i++){
-                        cctvCursor.moveToPosition(i);
-                        String cctvTask = cctvCursor.getString(cctvCursor.getColumnIndex(TaskEntry.DESCRIPTION));
-                        Log.d("task query", cctvTask);
-                        cctvSummary +=cctvTask;
-                    }
-                }
-                Cursor lanCursor = mDb.query(TaskEntry.TABLE_NAME, null,"LAN", null,null,null,null);
-                if(cctvCursor.moveToFirst()){
-                    String lanSummary="";
-                    for(int i = 0; i<lanCursor.getCount(); i++){
-                        lanCursor.moveToPosition(i);
-                        String lanTask = lanCursor.getString(lanCursor.getColumnIndex(TaskEntry.DESCRIPTION));
-                        Log.d("task query", lanTask);
-                        lanSummary +=lanTask;
-                    }
+                validEmail =TextUtils.isEmpty(emailAddress)||!Patterns.EMAIL_ADDRESS.matcher(emailAddress).matches(); //empty or invalid email address
+                boolean isEmailEmpty =TextUtils.isEmpty(emailAddress);
+                boolean emailMatcher =!Patterns.EMAIL_ADDRESS.matcher(emailAddress).matches();
+                Log.d(ACTIVITY,"valid email? "+emailAddress+" "+isEmailEmpty+" "+emailMatcher);
+                Context context = getApplicationContext();
+                ConnectivityManager cm = (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
+                NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+                boolean isConnected = activeNetwork != null &&
+                        activeNetwork.isConnectedOrConnecting();
+                if(validEmail){
+                    Toast toast = Toast.makeText(context, R.string.toast_no_email_address, Toast.LENGTH_LONG);
+                    toast.show();
+                }else if(!isConnected) {
+                    Toast toast = Toast.makeText(context, R.string.toast_no_network, Toast.LENGTH_LONG);
+                    toast.show();
+                }else if(emailSummary!=null ||emailSummary.equals("No tasks have been entered.")){
+                    Toast toast = Toast.makeText(context, "No tasks have been entered.", Toast.LENGTH_LONG);
+                    toast.show();
+                } else{
+                    retrieveTasks();
+                    SimpleDateFormat format = new SimpleDateFormat("EEE MMM dd");//ex Tuesday May 5, 2018
+                    String SummaryDateString = format.format(new Date());
+                    Log.d(ACTIVITY, "email button address "+emailAddress+" date "+SummaryDateString);
+                    Intent emailIntent = new Intent(Intent.ACTION_SENDTO, Uri.fromParts(
+                            "mailto",emailAddress,null));
+                    emailIntent.putExtra(Intent.EXTRA_SUBJECT, "TSI Summary Report "+SummaryDateString);
+                    emailIntent.putExtra(Intent.EXTRA_TEXT, emailSummary);
+                    Log.d(ACTIVITY, "email summary "+emailSummary);
+                    startActivity(Intent.createChooser(emailIntent, "Send Email..."));
+                    deleteAllTasks();
+                    Log.d(ACTIVITY, "deleteAllTasks completed ");
+                    taskSummary="\n";
+                    tv_completed_tasks.setText(taskSummary);
                 }
             }
         });
         btn_add_task.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Toast.makeText(getApplicationContext(), "Added "+systemName+" task to list.", Toast.LENGTH_SHORT).show();
-                systemSummary = et_task_entry.getText().toString();
-                TaskDbHelper dbHelper = new TaskDbHelper(getApplicationContext());
+                SimpleDateFormat format = new SimpleDateFormat("EEE MMM dd, yyyy");//ex Tuesday May 5, 2018
+                String dateString = format.format(new Date());  Log.d(ACTIVITY, "today is "+dateString);
+                systemSummary =et_task_entry.getText().toString();//text entered by the user
+                taskSummary+=systemSummary+"\n";//have the bottom half of the screen only show the actions for the task
+                Log.d(ACTIVITY, "task summary add button "+taskSummary);
+                tv_completed_tasks.setText(taskSummary);
+                SumDbHelper dbHelper = new SumDbHelper(getApplicationContext());
                 mDb = dbHelper.getWritableDatabase();
                 ContentValues contentValues = new ContentValues();
-                SimpleDateFormat sdf = new SimpleDateFormat("MM-dd-yyyy");
-                String todaysDate = sdf.format(new Date());
-                Log.d("task date", todaysDate);
-                contentValues.put(TaskEntry.DATE, todaysDate);
-                contentValues.put(TaskEntry.SYSTEM, systemName);
-                Log.d("task summary", systemSummary);
-                contentValues.put(TaskEntry.DESCRIPTION, systemSummary);
-                LocationClass locationClass = new LocationClass();
-                asyncDone =false;
-                latLong =taskLocationClass();
-                //Log.d("task location", latLong[0]+" "+latLong[1]);
-                //location = locationClass.getLocation(taskLocationClass());
-                if(asyncDone==false){
-                    try{
-                        Thread.sleep(100); //yes I know this defeats the purpose of async thread
-                    }catch (InterruptedException e){
-                        location = "Unable to determine location.";
-                    }
+                contentValues.put(SumTaskContract.SummaryEntry.COLUMN_SYSTEM, getString(com.john.android.tsi.R.string.widget_tracker_title));
+                contentValues.put(SumTaskContract.SummaryEntry.COLUMN_SUMMARY, systemSummary);
+                Cursor cursor = mDb.query(SumTaskContract.SummaryEntry.TABLE_NAME, null, null,null,null,null,null);
+                if(cursor.moveToFirst()){
+                    mDb.update(SumTaskContract.SummaryEntry.TABLE_NAME, contentValues,null, null);
+                    Log.d("Widget PwrLoads", "update");//
+                }else {
+                    long insert  =mDb.insert(SumTaskContract.SummaryEntry.TABLE_NAME, null, contentValues);
+                    Log.d("Widget PwrLoads", "insert");
 
-                }
-                Log.d("task location", location);
-                contentValues.put(TaskEntry.LOCATION, location);
-                contentValues.put(TaskEntry.STATUS, "Complete");
+                }cursor.close();
+                SummaryService.startActionUpdateSum(getApplicationContext());
+                Log.d(ACTIVITY, "room values "+dateString+" "+systemName+" "+systemSummary+" "+locationString);
+                final TaskEntryRm taskToAdd  = new TaskEntryRm(dateString,systemName, systemSummary, locationString, 0);
+                AppExecutors.getInstance().diskIO().execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        Log.d(ACTIVITY, "add task, run method");
+                        appDb.taskDao().insertTask(taskToAdd);
+                    }
+                });
+                retrieveTasks();
+                Context context = getApplicationContext();
+                Toast toast = Toast.makeText(context, R.string.task_saved, Toast.LENGTH_SHORT);
+                toast.show();
+                et_task_entry.setText("");//empties the text the user entered for the past task
             }
         });
     }
-
-    private String determineSystem(int systemIndex){
-        switch(systemIndex){
-            case 0: return "CCTV";
-            case 1: return "Cabinets";
-            case 2: return "ETV";
-            case 3: return "LAN";
-            case 4: return "PAGA";
-            case 5: return "Radar";
-            case 6: return "Radio";
-            case 7: return "SCS";
-            case 8: return "UPS";
-            default: return "Misc.";
+    @Override
+    public void onAddressComplete(String address) {
+        locationString = address;
+        Log.d(ACTIVITY, "address update interface "+address+" "+locationString);
+        if(!locationUpdated){//let the user know the first time that they go to the activity that a non-null address has been retrieved from Google
+            locationUpdated = true;
+            Toast toast = Toast.makeText(getApplicationContext(), R.string.task_updated, Toast.LENGTH_SHORT);
+            toast.show();
+        }
+    }
+    private void retrieveTasks(){
+        LiveData<List<TaskEntryRm>> tasks = appDb.taskDao().loadAllTasks();
+        tasks.observe(this, new Observer<List<TaskEntryRm>>() {
+            @Override
+            public void onChanged(@Nullable List<TaskEntryRm> taskEntryRms) {
+                if(taskEntryRms!=null){
+                    emailSummary="No tasks have been entered.";//reset
+                    completedTasks = taskEntryRms;//when a task is
+                    for(int i= 0; i<taskEntryRms.size();i++){
+                        TaskEntryRm taskEntry = taskEntryRms.get(i);
+                        String systemDate = taskEntry.getDate();
+                        String systemName = taskEntry.getSystem();
+                        String systemSummary = taskEntry.getSummary();
+                        String systemLocation = taskEntry.getLocation();
+                        emailSummary+= systemName+"\n"+systemDate+"\n"+systemSummary+"\n"+systemLocation+"\n";
+                    }
+                }
+            }
+        });
+    }
+    private void deleteAllTasks(){
+        AppExecutors.getInstance().diskIO().execute(new Runnable() {
+            @Override
+            public void run() {
+                for(int i = 0;i<completedTasks.size();i++){
+                    appDb.taskDao().deleteTask(completedTasks.get(i));
+                    Log.d(ACTIVITY, "deleted task "+i);
+                }
+            }
+        });
+    }
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if(grantResults.length>0&&grantResults[0]==PackageManager.PERMISSION_GRANTED){
+            Log.i(ACTIVITY, "onRequestPermissionsResult PERMISSION_GRANTED");
+            if(ContextCompat.checkSelfPermission(this,
+                    Manifest.permission.ACCESS_FINE_LOCATION)==PackageManager.PERMISSION_GRANTED){
+                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
+                        10000, 10, locationListener);//get location updates every minute
+                Log.i(ACTIVITY, "onRequestPermissionsResult PERMISSION_GRANTED via manifest");
+            }
         }
     }
     private void setUpPreferences() {//sets up preferences when the user reopens the activity
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
         sharedPref.registerOnSharedPreferenceChangeListener(this);
-        imperial = sharedPref.getBoolean(getResources().getString(R.string.pref_units_key), true);
-        Log.d("pref fragment", imperial+" setup");
+        emailAddress= sharedPref.getString(getResources().getString(R.string.pref_email_key),"set up email address");
     }
     @Override//updates the activity once the units system has changed
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        if(key.equals(getResources().getString(R.string.pref_units_key))){
-            imperial = sharedPreferences.getBoolean(getResources().getString(R.string.pref_units_key), true);
-            Log.d("pref fragment", imperial+" changed");
+        if(key.equals(getResources().getString(R.string.pref_email_key))){
+            emailAddress = sharedPreferences.getString(getResources().getString(R.string.pref_email_key),"set up email address");
         }
+    }
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putDouble("latLong_zero", latLong[0]);
+        outState.putDouble("latLong_one", latLong[1]);
+        outState.putString("taskSummary",taskSummary);
     }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -187,48 +309,31 @@ public class TaskListActivity extends AppCompatActivity implements SharedPrefere
             Log.d("menu", "menu clicked");
             startActivity(new Intent(TaskListActivity.this, SettingsActivity.class));
             return true;
+        }else if (itemClicked==R.id.menu_go_to_main){
+            startActivity(new Intent(TaskListActivity.this, MainActivity.class));
+            return true;
         }
         return super.onOptionsItemSelected(item);
     }
-    private double[] taskLocationClass(){
-        boolean permission;
-        FusedLocationProviderClient mFusedLocationClient;
-        Location mLastLocation;
-        boolean mAddressRequested;
-        String mAddressOutput;
-        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
-        permission = checkPermissions();    Log.d("location", "permission is "+permission);
-        if(!checkPermissions()){
-            requestPermissions();
-        }else {
-            try{
-                mFusedLocationClient.getLastLocation().addOnSuccessListener(this, new OnSuccessListener<Location>() {
-                    @Override
-                    public void onSuccess(Location location) {
-                        latLong[0]=location.getLatitude();
-                        latLong[1]= location.getLongitude();
-                        Log.d("location act",latLong[0]+" "+latLong[1]);
-                    }
-                });
-            }catch (SecurityException e){
-                //no lat long can be found
-            }
-        }
-        return null;
+    @Override
+    protected void onStop() {
+        super.onStop();
+        locationManager.removeUpdates(locationListener);
     }
-    private boolean checkPermissions() {
-        int permissionState = ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION);
-        return permissionState == PackageManager.PERMISSION_GRANTED;
+    @Override
+    public void onPause() {
+        if (adViewBanner != null) adViewBanner.pause();
+        super.onPause();
     }
-    private void requestPermissions(){
-        boolean shouldProvideRationale = ActivityCompat.shouldShowRequestPermissionRationale(
-                this, Manifest.permission.ACCESS_FINE_LOCATION);
-        if(shouldProvideRationale){
-            Log.i("location permission","rational for permis" );
-
-        }
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (adViewBanner != null) adViewBanner.resume();
     }
-
-
+    @Override
+    public void onDestroy() {
+        if (adViewBanner != null) adViewBanner.destroy();
+        super.onDestroy();
+    }
 }
+

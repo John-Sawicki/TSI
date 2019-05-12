@@ -1,4 +1,4 @@
-package com.example.android.tsi;
+package com.john.android.tsi;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -11,25 +11,21 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
-import com.example.android.tsi.utilities.ApiKey;
-import com.example.android.tsi.utilities.SystemAdapter;
+import com.john.android.tsi.utilities.SystemAdapter;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
 import com.google.android.gms.ads.AdRequest;
-import com.google.android.gms.ads.AdSize;
 import com.google.android.gms.ads.AdView;
 import com.google.android.gms.ads.MobileAds;
-
-import static com.example.android.tsi.utilities.ApiKey.bannerAdKey;
 
 public class MainActivity extends AppCompatActivity implements SystemAdapter.SystemOnClickInterface, SharedPreferences.OnSharedPreferenceChangeListener {
     @BindView(R.id.rv_system_name)RecyclerView mRecyclerView;
     @BindView(R.id.adViewBanner) AdView adViewBanner;
-    //private AdView adViewBanner;
     private SystemAdapter mSystemAdapter;
-    private boolean imperial = true;//true for US black and green color code
+    private boolean imperial = true;
+    private boolean landscape = false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -38,9 +34,10 @@ public class MainActivity extends AppCompatActivity implements SystemAdapter.Sys
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         mRecyclerView.setLayoutManager(layoutManager);
         mRecyclerView.setHasFixedSize(true);
-        mSystemAdapter = new SystemAdapter(this);
+        landscape = getResources().getBoolean(R.bool.landscape);
+        Log.d("SystemAdapter", "onCreate boolean "+landscape);
+        mSystemAdapter = new SystemAdapter(this, landscape);
         mRecyclerView.setAdapter(mSystemAdapter);
-        //adViewBanner = findViewById(R.id.adViewBanner);
         MobileAds.initialize(this, "ca-app-pub-8686454969066832~6147856904");
         AdRequest adRequest = new AdRequest.Builder().build();
         adViewBanner.loadAd(adRequest);
@@ -82,7 +79,7 @@ public class MainActivity extends AppCompatActivity implements SystemAdapter.Sys
     }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.main, menu);
+        getMenuInflater().inflate(R.menu.main_act_menu, menu);
         return true;
     }
     @Override
@@ -94,5 +91,20 @@ public class MainActivity extends AppCompatActivity implements SystemAdapter.Sys
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+    @Override
+    public void onPause() {
+        if (adViewBanner != null) adViewBanner.pause();
+        super.onPause();
+    }
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (adViewBanner != null) adViewBanner.resume();
+    }
+    @Override
+    public void onDestroy() {
+        if (adViewBanner != null) adViewBanner.destroy();
+        super.onDestroy();
     }
 }

@@ -1,59 +1,41 @@
-package com.example.android.tsi.utilities;
+package com.john.android.tsi.utilities;
 
-import android.content.Context;
-import android.location.Address;
-import android.location.Criteria;
-import android.location.Geocoder;
-import android.location.Location;
-import android.location.LocationManager;
-import android.os.AsyncTask;
-import android.util.Log;
-
-import com.example.android.tsi.TaskListActivity;
-import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.tasks.OnSuccessListener;
-
+import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.util.List;
-
-//https://stackoverflow.com/questions/2227292/how-to-get-latitude-and-longitude-of-the-mobile-device-in-android
-//https://developers.google.com/maps/documentation/geolocation/intro
 public class LocationClass {
-    double[] latLong ={0,0};
-    String locationString="Earth", urlBase = "https://maps.googleapis.com/maps/api/geocode/json?latlng="+latLong[0]+","+latLong[1]+"&key="+ApiKey.GoogleApiKey;
-    private FusedLocationProviderClient mFusedLocationClient;
-    public  String getLocation(double[] mLatLong){
-        latLong = mLatLong;
-            new AsysncLocationTask().execute(latLong);
-            return locationString;
+    private static String CLASS_NAME = "LOCATION_CLASS";
+    private double[] mLatLong ={0,0};
+    public String locationString="Earth",urlBase;
+    private String testUrl = "https://maps.googleapis.com/maps/api/geocode/json?latlng=29.744292,-95.392361&sensor=true&key=AIzaSyDJu5bIXp-ZNvZ8Ao1dLJQgaA2SMXZyA8o";
+
+    public LocationClass(){
+
     }
-    public class AsysncLocationTask extends AsyncTask<double[], Integer, String>{
-        @Override
-        protected String doInBackground(double[]... doubleLatLong) {
-            String asyncLocation;
-            String rawJson = "https://maps.googleapis.com/maps/api/geocode/json?latlng="+doubleLatLong[0]+","+doubleLatLong[1]+"&key="+ApiKey.GoogleApiKey;
-            Log.d("location rawJson",rawJson);
-            try{
-                JSONObject locationJson = new JSONObject(rawJson);
-                asyncLocation = locationJson.getString("formatted_address");
-                Log.d("location", asyncLocation);
-                return asyncLocation;
-            }catch (Exception e){
-                e.printStackTrace();
-                return "Location not Found";
-            }
+    public static String parseStaticJsonAddress(String address){
+        if(address.equals("")) return "Location parseJsonAddress";
+        try{
+            JSONObject locationJson = new JSONObject(address);
+            JSONArray resultsArray = locationJson.getJSONArray("results");
+            JSONObject firstResult = resultsArray.getJSONObject(0);
+            return firstResult.getString("formatted_address");
+        }catch (Exception e){
         }
-        @Override
-        protected void onProgressUpdate(Integer... values) {
-            super.onProgressUpdate(values);
-        }
-        @Override
-        protected void onPostExecute(String s) {
-            Log.d("location", s);
-            locationString = s;
-            super.onPostExecute(s);
+        return "Unable to determine location.";
+    }
+    public static String determineSystem(int systemIndex){
+        switch(systemIndex){
+            case 0: return "CCTV";
+            case 1: return "Cabinets";
+            case 2: return "ETV";
+            case 3: return "LAN";
+            case 4: return "PAGA";
+            case 5: return "Radar";
+            case 6: return "Radio";
+            case 7: return "SCS";
+            case 8: return "UPS";
+            case 9: return "Misc";
+            default: return "Misc.";
         }
     }
 }
